@@ -2,6 +2,8 @@ import tkinter as tk
 import subprocess
 import shutil
 import os
+import requests
+import zipfile
 
 def download_novel():
     book_id = entry_book_id.get()
@@ -12,9 +14,9 @@ def download_novel():
         command = ['./novel-cli', 'download', book_id, '--source', book_source, '--format', book_format]
         try:
             subprocess.run(command, check=True)
-            label_status.config(text="下载完成")   
+            label_status.config(text="下载完成")
         except subprocess.CalledProcessError:
-            label_status.config(text="下载出错")   
+            label_status.config(text="下载出错")
         # 获取当前程序所在的文件夹路径
         current_folder = os.path.dirname(os.path.abspath(__file__))
         # 获取当前文件夹内的所有文件夹名称列表类型
@@ -29,8 +31,8 @@ def download_novel():
                 continue
         # 删除临时文件夹
             shutil.rmtree(folder_name_str)
-        label_status.config(text="流程结束")   
-    else:    
+        label_status.config(text="流程结束")
+    else:
         command = ['./novel-cli', 'download', book_id, '--source', book_source, '--format', book_format]
         try:
             subprocess.run(command, check=True)
@@ -57,8 +59,29 @@ def build_novel():
         shutil.rmtree(folder_name_str)
 
 
+def start_check():
+    print("初始化中")
+    if os.path.exists("novel-cli.exe"):
+        print("初始化完成")
+    else:
+        url = "https://github.com/novel-rs/cli/releases/download/0.3.8/novel-cli-x86_64-pc-windows-msvc.zip"
+        response = requests.get(url)
 
+        if response.status_code == 200:
+            file_name = url.split("/")[-1]
+            with open(file_name, "wb") as file:
+                file.write(response.content)
+            print("文件下载成功！")
+        else:
+            print("文件下载失败。")
 
+        zip_file = 'novel-cli-x86_64-pc-windows-msvc.zip'
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall()
+        os.remove(zip_file)
+        print("初始化完成")
+
+start_check()
 # 创建窗口
 window = tk.Tk()
 window.title("小说下载GUI")
@@ -107,3 +130,7 @@ option_menu_book_source.config(font=("微软雅黑", 15))
 option_menu_book_format.config(font=("微软雅黑", 15))
 # 运行窗口
 window.mainloop()
+
+
+
+
