@@ -64,7 +64,7 @@ def start_check():
     if os.path.exists("novel-cli.exe"):
         print("初始化完成")
     else:
-        url = "https://github.com/novel-rs/cli/releases/download/0.3.8/novel-cli-x86_64-pc-windows-msvc.zip"
+        url = "https://github.com/novel-rs/cli/releases/download/0.4.0/novel-cli-x86_64-pc-windows-msvc.zip"
         response = requests.get(url)
 
         if response.status_code == 200:
