@@ -5,66 +5,52 @@ import os
 import requests
 import zipfile
 
-def download_novel():
-    book_id = entry_book_id.get()
-    book_source = dropdown_book_source.get()
-    book_format = dropdown_book_format.get()
-    if book_format == "epub":
-        book_format = "pandoc"
+def run_cli():
+    if type_command == "search":
+        keyword = entry_keyword.get()
+        book_source = dropdown_book_source.get()
+        command = ['./novel-cli', 'search', keyword, '--source', book_source]
+        try:
+            subprocess.run(command, check=True)
+        except subprocess.CalledProcessError:
+            pass
+    elif type_command == "download":
+        book_id = entry_book_id.get()
+        book_source = dropdown_book_source.get()
+        book_format = dropdown_book_format.get()
         command = ['./novel-cli', 'download', book_id, '--source', book_source, '--format', book_format]
         try:
             subprocess.run(command, check=True)
-            label_status.config(text="下载完成")
+            pass
         except subprocess.CalledProcessError:
-            label_status.config(text="下载出错")
-        # 获取当前程序所在的文件夹路径
-        current_folder = os.path.dirname(os.path.abspath(__file__))
-        # 获取当前文件夹内的所有文件夹名称列表类型
-        folder_name = [folder for folder in os.listdir(current_folder) if os.path.isdir(os.path.join(current_folder, folder))]
-        for folder_name_str in folder_name:
-            build_command = ['./novel-cli', 'build', folder_name_str]
-            try:
-                subprocess.run(build_command, check=True)
-                label_status.config(text="转换完成")
-            except subprocess.CalledProcessError:
-                label_status.config(text="转换出错")
-                continue
-        # 删除临时文件夹
-            shutil.rmtree(folder_name_str)
-        label_status.config(text="流程结束")
+            pass
+    elif type_command == "build":
+        book_folder = dropdown_book_folder.get()
+        
+        characters_to_remove = ["(", ")", "'", ","]
+
+        for character in characters_to_remove:
+            book_folder = book_folder.replace(character, "")
+        
+        command = ['./novel-cli', 'build', book_folder]
+        try:
+            subprocess.run(command, check=True)
+        except subprocess.CalledProcessError:
+            pass
+        shutil.rmtree(book_folder)
     else:
-        command = ['./novel-cli', 'download', book_id, '--source', book_source, '--format', book_format]
-        try:
-            subprocess.run(command, check=True)
-            label_status.config(text="下载完成")
-        except subprocess.CalledProcessError:
-            label_status.config(text="下载出错")
+        print("未知操作类型")
 
 
-def build_novel():
-    # 获取当前程序所在的文件夹路径
-    current_folder = os.path.dirname(os.path.abspath(__file__))
-    # 获取当前文件夹内的所有文件夹名称列表类型
-    folder_name = [folder for folder in os.listdir(current_folder) if
-                   os.path.isdir(os.path.join(current_folder, folder))]
-    for folder_name_str in folder_name:
-        build_command = ['./novel-cli', 'build', folder_name_str]
-        try:
-            subprocess.run(build_command, check=True)
-            label_status.config(text="转换完成")
-        except subprocess.CalledProcessError:
-            label_status.config(text="转换出错")
-            continue
-        # 删除临时文件夹
-        shutil.rmtree(folder_name_str)
-
+            
+            
 
 def start_check():
     print("初始化中")
     if os.path.exists("novel-cli.exe"):
         print("初始化完成")
     else:
-        url = "https://github.com/novel-rs/cli/releases/download/0.4.0/novel-cli-x86_64-pc-windows-msvc.zip"
+        url = "https://github.com/novel-rs/cli/releases/download/0.5.0/novel-cli-x86_64-pc-windows-msvc.zip"
         response = requests.get(url)
 
         if response.status_code == 200:
@@ -81,56 +67,155 @@ def start_check():
         os.remove(zip_file)
         print("初始化完成")
 
+def gui_search():
+    global type_command, entry_keyword, dropdown_book_source
+    type_command = "search"
+    main.withdraw()  # 隐藏主窗口
+    search_window = tk.Toplevel()  # 创建新的搜索窗口
+    search_window.title("Novel-RS-GUI")
+
+    
+    # 创建控件
+    title_id = tk.Label(search_window, text="Novel-RS-GUI", font=("微软雅黑", 35))
+    command_type = tk.Label(search_window, text="搜索", font=("微软雅黑", 24))
+    
+    label_book_source = tk.Label(search_window, text="小说网站:", font=("微软雅黑", 18))
+    dropdown_book_source = tk.StringVar()
+    option_menu_book_source = tk.OptionMenu(search_window, dropdown_book_source, "sfacg", "ciweimao")
+    dropdown_book_source.set("sfacg")
+    option_menu_book_source.config(font=("微软雅黑", 18))  # 设置字体
+    
+    label_keyword = tk.Label(search_window, text="关键词:", font=("微软雅黑", 18))
+    entry_keyword = tk.Entry(search_window, width=10, font=("微软雅黑", 18))
+    
+    button_run = tk.Button(search_window, text="搜索", font=("微软雅黑", 18), command=run_cli)
+    button_back = tk.Button(search_window, text="返回", font=("微软雅黑", 18), command=lambda: close_window(search_window))
+    
+    # 设置控件布局
+    title_id.grid(row=0, pady=10, column=0, columnspan=2)
+    command_type.grid(row=1, pady=10, column=0, columnspan=2)
+    label_book_source.grid(row=2, pady=10, column=0)
+    option_menu_book_source.grid(row=2, pady=10, column=1)
+    label_keyword.grid(row=3, pady=10, column=0)
+    entry_keyword.grid(row=3, pady=10, column=1)
+    button_run.grid(row=4, pady=10, column=0)
+    button_back.grid(row=4, pady=10, column=1)
+
+def gui_download():
+    global type_command, entry_book_id, dropdown_book_format, dropdown_book_source
+    type_command = "download"
+    main.withdraw()  # 隐藏主窗口
+    download_window = tk.Toplevel()  # 创建一个新的下载窗口
+    download_window.title("Novel-RS-GUI")
+
+
+    # 创建小部件（控件）
+    title_id = tk.Label(download_window, text="Novel-RS-GUI", font=("微软雅黑", 35))
+    command_type = tk.Label(download_window, text="下载", font=("微软雅黑", 24))
+
+    label_book_source = tk.Label(download_window, text="小说网站:", font=("微软雅黑", 18))
+    dropdown_book_source = tk.StringVar()
+    option_menu_book_source = tk.OptionMenu(download_window, dropdown_book_source, "sfacg", "ciweimao")
+    dropdown_book_source.set("sfacg")
+    option_menu_book_source.config(font=("微软雅黑", 18))  # 设置字体
+
+    label_book_format = tk.Label(download_window, text="下载格式:", font=("微软雅黑", 15))
+    dropdown_book_format = tk.StringVar()
+    option_menu_book_format = tk.OptionMenu(download_window, dropdown_book_format, "mdbook", "pandoc")
+    dropdown_book_format.set("pandoc")
+    option_menu_book_format.config(font=("微软雅黑", 18))  # 设置字体
+
+    label_book_id = tk.Label(download_window, text="ID:", font=("微软雅黑", 18))
+    entry_book_id = tk.Entry(download_window, width=10, font=("微软雅黑", 18))
+
+    button_run = tk.Button(download_window, text="下载", font=("微软雅黑", 18), command=run_cli)
+    button_back = tk.Button(download_window, text="返回", font=("微软雅黑", 18), command=lambda: close_window(download_window))
+
+    # 设置小部件布局
+    title_id.grid(row=0, pady=10, column=0, columnspan=2)
+    command_type.grid(row=1, pady=10, column=0, columnspan=2)
+
+    label_book_source.grid(row=2, pady=10, column=0)
+    option_menu_book_source.grid(row=2, pady=10, column=1)
+
+    label_book_format.grid(row=3, pady=10, column=0)
+    option_menu_book_format.grid(row=3, pady=10, column=1)
+
+    label_book_id.grid(row=4, pady=10, column=0)
+    entry_book_id.grid(row=4, pady=10, column=1)
+
+    button_run.grid(row=5, pady=10, column=0)
+    button_back.grid(row=5, pady=10, column=1)
+
+
+def gui_build():
+    global type_command, dropdown_book_folder
+    type_command = "build"
+    # 获取当前程序所在的文件夹路径
+    current_folder = os.path.dirname(os.path.abspath(__file__))
+    # 获取当前文件夹内的所有文件夹名称列表类型
+    folder_name = [folder for folder in os.listdir(current_folder) if
+                   os.path.isdir(os.path.join(current_folder, folder))]
+                   
+    main.withdraw()  # 隐藏主窗口
+    build_window = tk.Toplevel()  # 创建一个新的下载窗口
+    build_window.title("Novel-RS-GUI")
+
+    
+    # 创建小部件（控件）
+    title_id = tk.Label(build_window, text="Novel-RS-GUI", font=("微软雅黑", 35))
+    command_type = tk.Label(build_window, text="构建", font=("微软雅黑", 24))
+    
+    label_book_folder = tk.Label(build_window, text="选择文件夹:", font=("微软雅黑", 18))
+    dropdown_book_folder = tk.StringVar()
+    option_menu_book_folder = tk.OptionMenu(build_window, dropdown_book_folder, folder_name)
+    option_menu_book_folder.config(font=("微软雅黑", 18))  # 设置字体
+    
+    button_run = tk.Button(build_window, text="构建", font=("微软雅黑", 18), command=run_cli)
+    button_back = tk.Button(build_window, text="返回", font=("微软雅黑", 18), command=lambda: close_window(build_window))
+    
+    # 设置小部件布局
+    title_id.grid(row=0, pady=10, column=0, columnspan=2)
+    command_type.grid(row=1, pady=10, column=0, columnspan=2)
+
+    label_book_folder.grid(row=2, pady=10, column=0)
+    option_menu_book_folder.grid(row=2, pady=10, column=1)
+    
+    button_run.grid(row=3, pady=10, column=0)
+    button_back.grid(row=3, pady=10, column=1)
+
+    
+
+
+def close_window(window):
+    window.destroy()
+    main.deiconify()
+
 start_check()
+
+# 初始化
+type_command = ""  # 0.搜索 1.下载 2.构建
+
 # 创建窗口
-window = tk.Tk()
-window.title("小说下载GUI")
-window.geometry('235x310')
-window.resizable(False, False)
+main = tk.Tk()
+main.title("Novel-RS-GUI")
+
+
 # 创建控件
-title_id = tk.Label(window, text="novel-cli-gui", font=("微软雅黑", 25))
-author_id = tk.Label(window, text="GUI作者：TenSin", font=("微软雅黑", 12))
-label_book_id = tk.Label(window, text="小说ID:", font=("微软雅黑", 15))
-entry_book_id = tk.Entry(window, width=10, font=("微软雅黑", 15))
+label_title = tk.Label(main, text="Novel-RS-GUI", font=("微软雅黑", 35))
+label_author = tk.Label(main, text="GUI作者：TenSin", font=("微软雅黑", 18))
 
-label_book_source = tk.Label(window, text="小说网站:", font=("微软雅黑", 15))
-dropdown_book_source = tk.StringVar()
-option_menu_book_source = tk.OptionMenu(window, dropdown_book_source, "sfacg", "ciweimao")
-dropdown_book_source.set("sfacg")
-label_book_format = tk.Label(window, text="下载格式:", font=("微软雅黑", 15))
-dropdown_book_format = tk.StringVar()
-option_menu_book_format = tk.OptionMenu(window, dropdown_book_format, "mdbook", "pandoc", "epub")
-dropdown_book_format.set("epub")
-button_bulid = tk.Button(window, text="构建", font=("微软雅黑", 15), command=build_novel)
-button_download = tk.Button(window, text="下载", font=("微软雅黑", 20), command=download_novel)
-
-
-label_status = tk.Label(window, text="",font=("微软雅黑", 15))
+button_search = tk.Button(main, text="搜索", font=("微软雅黑", 20), command=gui_search)
+button_download = tk.Button(main, text="下载", font=("微软雅黑", 20), command=gui_download)
+button_build = tk.Button(main, text="构建", font=("微软雅黑", 20), command=gui_build)
 
 # 设置控件布局
-title_id.grid(row=0, column=0,columnspan=2)
-author_id.grid(row=1, column=1)
+label_title.grid(row=0, pady=10, column=0, columnspan=3)
+label_author.grid(row=1, pady=10, column=1, columnspan=2)
 
-label_book_id.grid(row=2, column=0)
-entry_book_id.grid(row=2, column=1)
+button_search.grid(row=2, pady=10, column=0)
+button_download.grid(row=2, pady=10, column=1)
+button_build.grid(row=2, pady=10, column=2)
 
-label_book_source.grid(row=3, column=0)
-option_menu_book_source.grid(row=3, column=1)
-
-label_book_format.grid(row=4, column=0)
-option_menu_book_format.grid(row=4, column=1)
-
-button_bulid.grid(row=5, column=0)
-button_download.grid(row=5, column=1)
-
-label_status.grid(row=6, column=0,columnspan=2)
-
-
-option_menu_book_source.config(font=("微软雅黑", 15))
-option_menu_book_format.config(font=("微软雅黑", 15))
 # 运行窗口
-window.mainloop()
-
-
-
-
+main.mainloop()
