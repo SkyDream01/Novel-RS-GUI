@@ -4,6 +4,7 @@ import shutil
 import os
 import requests
 import zipfile
+import sys
 
 def run_cli():
     if type_command == "search":
@@ -151,11 +152,15 @@ def gui_download():
 def gui_build():
     global type_command, dropdown_book_folder
     type_command = "build"
-    # 获取当前程序所在的文件夹路径
-    current_folder = os.path.dirname(os.path.abspath(__file__))
-    # 获取当前文件夹内的所有文件夹名称列表类型
-    folder_name = [folder for folder in os.listdir(current_folder) if
-                   os.path.isdir(os.path.join(current_folder, folder))]
+# 获取可执行文件的路径
+    executable_path = os.path.abspath(sys.argv[0])
+
+# 获取可执行文件所在文件夹的路径
+    folder_path = os.path.dirname(executable_path)
+
+# 获取可执行文件所在文件夹中的所有文件夹名称，并存储为列表
+    folder_name = [name for name in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, name))]
+
                    
     main.withdraw()  # 隐藏主窗口
     build_window = tk.Toplevel()  # 创建一个新的下载窗口
@@ -168,7 +173,7 @@ def gui_build():
     
     label_book_folder = tk.Label(build_window, text="选择文件夹:", font=("微软雅黑", 18))
     dropdown_book_folder = tk.StringVar()
-    option_menu_book_folder = tk.OptionMenu(build_window, dropdown_book_folder, folder_name)
+    option_menu_book_folder = tk.OptionMenu(build_window, dropdown_book_folder, *folder_name)
     option_menu_book_folder.config(font=("微软雅黑", 18))  # 设置字体
     
     button_run = tk.Button(build_window, text="构建", font=("微软雅黑", 18), command=run_cli)
