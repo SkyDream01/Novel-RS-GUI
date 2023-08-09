@@ -1,6 +1,8 @@
 # novel-cli-gui
 novel-cli的gui
 会自动下载，但建议自行下载novel-cli
+
+
 使用构建命令时，需要安装pandoc
 
 
