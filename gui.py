@@ -28,11 +28,6 @@ def run_cli():
     elif type_command == "build":
         book_folder = dropdown_book_folder.get()
         
-        characters_to_remove = ["(", ")", "'", ","]
-
-        for character in characters_to_remove:
-            book_folder = book_folder.replace(character, "")
-        
         command = ['./novel-cli', 'build', book_folder]
         try:
             subprocess.run(command, check=True)
